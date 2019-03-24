@@ -9,22 +9,23 @@ def random_selection(parents, index):
     # import pdb; pdb.set_trace()
     return parents[donorIndex]
 
-def roulette_selection(parents, index):
+def roulette_selection(parents):
     '''
     Selects individuals to be parents based on their fitness proportion 
     '''
 
-    sorted_pop = sorted(parents, key=operator.attrgetter('Fitness')) 
+    # sorted_pop = sorted(parents, key=operator.attrgetter('Fitness')) 
     # parents_pop's first is the best distance 
 
     sum_fits = 0
+    # import pdb; pdb.set_trace()
     for ind in parents:
-        sum_fits +=  ind.Fitness.TotalDistance 
+        sum_fits +=  ind.Fitness
 
     pick = random.uniform(0, sum_fits)
     current = 0
     for ind in parents:
-        current += ind.Fitness.TotalDistance
+        current += ind.Fitness
         if current > pick:
             return ind
 
