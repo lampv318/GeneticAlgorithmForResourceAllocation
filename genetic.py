@@ -17,9 +17,9 @@ def _generate_parent(get_fitness, length, geneSet,generate_genes):
 def _mutate(parent, geneSet, get_fitness):
     return 0
 
-def _mutate_custom(parent, custom_mutate, get_fitness):
+def _mutate_custom(parent, custom_mutate, get_fitness, bestParent):
     childGenes = parent.Genes
-    custom_mutate(childGenes)
+    custom_mutate(childGenes, bestParent)
     fitness = get_fitness(childGenes)
     return Chromosome(childGenes, fitness, Strategies.Mutate)
 
@@ -33,32 +33,31 @@ def get_best(generate_genes, get_fitness, length, optimalFitness, geneSet, displ
              custom_mutate=None, custom_create=None, maxAge=None,
              poolSize=1, crossover=None):
 
-    def fnMutate(parent):
-        return _mutate_custom(parent, custom_mutate, get_fitness)
+    def fnMutate(parent, bestParent):
+        return _mutate_custom(parent, custom_mutate, get_fitness, bestParent)
 
     def fnGenerateParent():
         return _generate_parent(get_fitness, length, geneSet, generate_genes)
 
     strategyLookup = {
         Strategies.Create: lambda p, o, i: fnGenerateParent(),
-        Strategies.Mutate: lambda p, o, i: fnMutate(p),
+        Strategies.Mutate: lambda p, o, i: fnMutate(p, i),
         Strategies.Crossover: lambda p, o, i : _crossover(p, o, i, get_fitness, crossover)
     }
     usedStrategies = [strategyLookup[Strategies.Mutate]]
     usedStrategies.append(strategyLookup[Strategies.Crossover])
 
-    def fnNewChild(parents):
+    def fnNewChild(parents, bestParent):
         parent = selections.roulette_selection(parents)
         parentDonor = selections.roulette_selection(parents)
         while parent == parentDonor:
             parentDonor = selections.roulette_selection(parents)
-        return random.choice(usedStrategies)(parent, parentDonor, parents) #bad
+        return random.choice(usedStrategies)(parent, parentDonor, bestParent) #bad
 
     for improvement in _get_improvement(fnNewChild, fnGenerateParent,
                                         maxAge, poolSize):
         display(improvement)
         if improvement.Fitness == 1:
-            # import pdb; pdb.set_trace()
             return improvement
 
 def _get_improvement(new_child, generate_parent, maxAge, poolSize):
@@ -76,35 +75,13 @@ def _get_improvement(new_child, generate_parent, maxAge, poolSize):
     lastParentIndex = poolSize - 1
     pindex = 1
     while True:
-        # import pdb; pdb.set_trace()
-        # pindex = pindex - 1 if pindex > 0 else lastParentIndex
-        # parent = parents[pindex]
     
-        child = new_child(parents)
-        # import pdb; pdb.set_trace()
-
-        # if parent.Fitness > child.Fitness:
-        #     # import pdb; pdb.set_trace()
-        #     if maxAge is None: #retain the current functionality if maxAge is not provided.
-        #         continue
-        #     parent.Age += 1
-        #     if maxAge > parent.Age:
-        #         continue 
-
-        # if not child.Fitness > parent.Fitness:
-        #     import pdb; pdb.set_trace()
-        #     child.Age = parent.Age + 1
-        #     parents[pindex] = child
-        #     continue
-        # child.Age = 0
-    #using parents[pindex] instead of parent when the parent is being replaced.
-    
-        # parents[pindex] = child
+        child = new_child(parents, bestParent)
+        
         if child.Fitness > bestParent.Fitness:
             bestParent = child
-            parents.append(bestParent)
             yield bestParent
-            # historicalFitnesses.append(bestParent.Fitness)
+            parents.append(bestParent)
     
 
 class Chromosome:
