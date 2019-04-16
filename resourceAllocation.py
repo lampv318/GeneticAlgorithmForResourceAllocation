@@ -2,6 +2,7 @@ import datetime
 import math
 import random
 import unittest
+import copy
 from itertools import chain
 
 import genetic
@@ -25,7 +26,7 @@ def generate_time_sched(genes, index, arrayOfDependencies, arrayOfDuration):
     for i in range(len(arrayOfDependencies)):
         if arrayOfDependencies[i][1] == index:
             timeTemp = genes[arrayOfDependencies[i][0]][0] # time schedule of task j
-            res = random.randrange(timeTemp, 90)
+            res = random.randrange(timeTemp, 75)
             return res
     return timeSched
 
@@ -74,39 +75,53 @@ def display(candidate, startTime):
         candidate.Strategy.name,
         timeDiff))
 
+def mutate(genes, fnGetFitness, arrayOfDependencies, arrayOfDuration):
+    # genes[index][0] = generate_time_sched(genes, index, arrayOfDependencies, arrayOfDuration)
+    # index = random.randrange(1, len(genes)+1)
+    # tempGenes[index][0] = random.randrange(0,71)
 
-def get_distance(locationA, locationB):
-    return 0
+    # return tempGenes
 
+    # return genes
 
-def mutate(genes, fnGetFitness, arrayOfDependencies, arrayOfDuration, bestParent):
-    initialFitness = fnGetFitness(genes)
-    a = 0 
-
+    tempGenes = copy.deepcopy(genes)
     index = random.randrange(1, len(genes)+1)
-    for _ in range(0,20):
-        # import pdb; pdb.set_trace()
-        a = genes[index][0] 
-        genes[index][0] = generate_time_sched(genes, index, arrayOfDependencies, arrayOfDuration)
-
-        fitness = fnGetFitness(genes)
+    initialFitness = fnGetFitness(genes)
+    for _ in range(70):
+        tempGenes[index][0] = generate_time_sched(genes, index, arrayOfDependencies, arrayOfDuration)
+        fitness = fnGetFitness(tempGenes)
         if fitness > initialFitness:
-            return
-        genes[index][0] = a
-    return
+            return tempGenes
+    return tempGenes
 
 def crossover(genes, donorGenes, fnGetFitness):
+    tempGenes = copy.deepcopy(genes)
+    tempDonor = copy.deepcopy(donorGenes)
     initialFitness = fnGetFitness(genes) if (fnGetFitness(genes) > fnGetFitness(donorGenes)) else fnGetFitness(donorGenes)
-
+    # import pdb; pdb.set_trace()
     for i in range(1,11):
 
-        genes[i][0], donorGenes[i][0] = donorGenes[i][0], genes[i][0]
-        childGenes = genes if (fnGetFitness(genes) > fnGetFitness(donorGenes)) else donorGenes
+    # i = random.randrange(1, 11)
 
+        tempGenes[i][0], tempDonor[i][0] = tempDonor[i][0], tempGenes[i][0]
+        childGenes = tempGenes if (fnGetFitness(tempGenes) > fnGetFitness(tempDonor)) else tempDonor
         if fnGetFitness(childGenes) > initialFitness:
             return childGenes
-        donorGenes[i][0], genes[i][0] = genes[i][0], donorGenes[i][0]
-    return genes
+            # donorGenes[i][0], genes[i][0] = genes[i][0], donorGenes[i][0]
+
+    return childGenes
+
+    # initialFitness = fnGetFitness(genes) if (fnGetFitness(genes) > fnGetFitness(donorGenes)) else fnGetFitness(donorGenes)
+
+    # for i in range(1,11):
+
+    #     genes[i][0], donorGenes[i][0] = donorGenes[i][0], genes[i][0]
+    #     childGenes = genes if (fnGetFitness(genes) > fnGetFitness(donorGenes)) else donorGenes
+
+    #     if fnGetFitness(childGenes) > initialFitness:
+    #         return childGenes
+    #     donorGenes[i][0], genes[i][0] = genes[i][0], donorGenes[i][0]
+    # return genes
 
 class ResourceAllocationTest(unittest.TestCase):
     geneSet = "01"
@@ -130,8 +145,8 @@ class ResourceAllocationTest(unittest.TestCase):
             return get_fitness_of_duration(genes,numberOfTask, arrayOfDependencies, 
                             arrayOfDuration)
 
-        def fnMutate(genes, bestParent):
-            mutate(genes, fnGetFitness, arrayOfDependencies, arrayOfDuration, bestParent)
+        def fnMutate(genes):
+            return mutate(genes, fnGetFitness, arrayOfDependencies, arrayOfDuration)
 
         def fnCrossover(genes, donor):
             return crossover(genes, donor, fnGetFitness)
