@@ -47,11 +47,7 @@ def get_best(generate_genes, get_fitness, length, optimalFitness, geneSet, displ
     usedStrategies = [strategyLookup[Strategies.Mutate]]
     usedStrategies.append(strategyLookup[Strategies.Crossover])
 
-    def fnNewChild(parents, bestParent):
-        parent = selections.roulette_selection(parents)
-        parentDonor = selections.roulette_selection(parents)
-        while parent == parentDonor:
-            parentDonor = selections.roulette_selection(parents)
+    def fnNewChild(parent, parentDonor, bestParent):
         return random.choice(usedStrategies)(parent, parentDonor, bestParent) #bad
 
     for improvement in _get_improvement(fnNewChild, fnGenerateParent,
@@ -59,6 +55,9 @@ def get_best(generate_genes, get_fitness, length, optimalFitness, geneSet, displ
         display(improvement)
         if improvement.Fitness == 1:
             return improvement
+
+def select_parent(parents):
+    return 0
 
 def _get_improvement(new_child, generate_parent, maxAge, poolSize):
     bestParent = generate_parent()
@@ -74,14 +73,27 @@ def _get_improvement(new_child, generate_parent, maxAge, poolSize):
     
     lastParentIndex = poolSize - 1
     pindex = 1
-    while True:
-    
-        child = new_child(parents, bestParent)
+    for i in range(30000):
+        # print(i)
+        parent = selections.roulette_selection(parents)
+        parentDonor = selections.roulette_selection(parents)
+        # import pdb; pdb.set_trace()
+        while parent == parentDonor:
+            parentDonor = selections.roulette_selection(parents)
+        ind = parents.index(parent)
+        child = new_child(parent, parentDonor, bestParent)
+        if child.Fitness > parent.Fitness:
+            parents[ind] = child
+
+        if child.Fitness == parent.Fitness:
+            parents[ind] = child
+        if child.Fitness == 1:
+            import pdb; pdb.set_trace()
         
         if child.Fitness > bestParent.Fitness:
             bestParent = child
             yield bestParent
-            parents.append(bestParent)
+            # parents.append(bestParent)
     
 
 class Chromosome:

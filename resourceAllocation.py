@@ -2,6 +2,7 @@ import datetime
 import math
 import random
 import unittest
+import numpy as np
 from itertools import chain
 
 import genetic
@@ -81,19 +82,24 @@ def get_distance(locationA, locationB):
 
 def mutate(genes, fnGetFitness, arrayOfDependencies, arrayOfDuration, bestParent):
     initialFitness = fnGetFitness(genes)
-    a = 0 
-
+    # a = 0 
     index = random.randrange(1, len(genes)+1)
-    for _ in range(0,20):
-        # import pdb; pdb.set_trace()
+    for _ in range(0,40):
         a = genes[index][0] 
-        genes[index][0] = generate_time_sched(genes, index, arrayOfDependencies, arrayOfDuration)
-
+        # import pdb; pdb.set_trace()
+        genes[index][0] = ball_mutation(a, 15)
+        if genes[index][0] < 0:
+            genes[index][0] = 0
         fitness = fnGetFitness(genes)
         if fitness > initialFitness:
-            return
+            return genes
         genes[index][0] = a
-    return
+    return genes
+
+def ball_mutation(point, radius):
+    return random.randint(point-radius, point+radius)
+    # return np.array([random_state.uniform(low=coordinate - radius, high=coordinate + radius) 
+    #     for coordinate in point])
 
 def crossover(genes, donorGenes, fnGetFitness):
     initialFitness = fnGetFitness(genes) if (fnGetFitness(genes) > fnGetFitness(donorGenes)) else fnGetFitness(donorGenes)
@@ -131,7 +137,7 @@ class ResourceAllocationTest(unittest.TestCase):
                             arrayOfDuration)
 
         def fnMutate(genes, bestParent):
-            mutate(genes, fnGetFitness, arrayOfDependencies, arrayOfDuration, bestParent)
+            return mutate(genes, fnGetFitness, arrayOfDependencies, arrayOfDuration, bestParent)
 
         def fnCrossover(genes, donor):
             return crossover(genes, donor, fnGetFitness)
@@ -139,7 +145,7 @@ class ResourceAllocationTest(unittest.TestCase):
         startTime = datetime.datetime.now()
         best = genetic.get_best(fnGenerateGenes, fnGetFitness, 10, None, self.geneSet,
                                 fnDisplay, fnMutate, fnCreate, maxAge=500,
-                                poolSize=100, crossover=fnCrossover)
+                                poolSize=70, crossover=fnCrossover)
 
 def load_task_duration(localFileName):
     with open(localFileName, mode='r') as infile:
